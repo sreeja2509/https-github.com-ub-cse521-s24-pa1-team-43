@@ -1,5 +1,6 @@
 #include "threads/thread.h"
 #include <debug.h>
+
 #include <stddef.h>
 #include <random.h>
 #include <stdio.h>
@@ -165,7 +166,7 @@ thread_print_stats (void)
    The code provided sets the new thread's `priority' member to
    PRIORITY, but no actual priority scheduling is implemented.
    Priority scheduling is the goal of Problem 1-3. */
-static bool less(struct list_elem *e1,struct list_elem *e2, void *aux)
+static bool comparator_less(struct list_elem *e1,struct list_elem *e2)
 {
   ASSERT(e1 != NULL);
   ASSERT(e2 != NULL);
@@ -253,7 +254,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_insert_ordered(&ready_list, &t->elem, less,NULL);
+  list_insert_ordered(&ready_list, &t->elem, comparator_less,NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -324,8 +325,8 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) {
-    //list_push_back (&ready_list, &cur->elem);
-    list_insert_ordered(&ready_list,&cur->elem,less,NULL);
+    
+    list_insert_ordered(&ready_list,&cur->elem,comparator_less,NULL);
   }
 
   cur->status = THREAD_READY;
@@ -356,9 +357,9 @@ thread_set_priority (int new_priority)
 {
   thread_current ()->priority = new_priority;
   if (!list_empty(&ready_list)){
-    struct list_elem *highest_priority=list_max(&ready_list,less,NULL);
-    struct thread *hp= list_entry(highest_priority,struct thread, elem);
-    if(new_priority < hp->priority){
+    struct list_elem *highest_pri=list_max(&ready_list,comparator_less,NULL);
+    struct thread *highestpriority= list_entry(highest_pri,struct thread, elem);
+    if(new_priority < highestpriority->priority){
       thread_yield();
     }
   }
